@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+
+  php:
+    container_name: php
+    build: ./php
+    volumes:
+      - ./src/symfony5-project/:/var/www/symfony/
+    command: bash -c " cd /var/www/symfony/ && composer install && php bin/console doctrine:migrations:migrate --allow-no-migration && php-fpm "
+    depends_on:
+      - database 
+    networks:
+      - frontend
+  
+  database:
+    container_name: database
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always 
+    environment:
+      MYSQL_ROOT_PASSWORD: wpadmin2345
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    ports:
+      - 3306:3306
+    networks:
+      - frontend
+  nginx:
+    container_name: nginx
+    restart: always
+    build: ./nginx
+    ports:
+     - "80:80"
+    volumes:
+     - ./var/log/nginx/:/var/log/nginx/
+     - ./src/symfony5-project/:/var/www/symfony/
+    links:
+     - 'php'
+    networks:
+     - frontend
+  
+networks:
+  frontend:
+
+volumes:
+  db_data:
